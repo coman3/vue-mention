@@ -73,16 +73,26 @@ export default class MentionResultProvider {
                 ].filter(x => x.name.toLowerCase().includes(filter.toLowerCase()))),
                 new MentionResult<Task>("Tasks", MentionType.Task, [
                     {
-                        name: "Do something",
+                        name: "DDOS the mainframe",
                         id: "693b7364-3257-4eae-b4df-a7a13268c86e"
                     },
                     {
-                        name: "kill some zombies",
+                        name: "Kill some zombies",
                         id: "603e3d55-a004-4944-8ddc-ff95391f3b69"
                     },
                     {
-                        name: "go shopping",
+                        name: "Buy toilet paper",
                         id: "d1dd6aa3-d306-498a-882c-caf12ee27280"
+                    }
+                ].filter(x => x.name.toLowerCase().includes(filter.toLowerCase()))),
+                new MentionResult<Task>("Jobs", MentionType.Job, [
+                    {
+                        name: "Bank Security Checkup",
+                        id: "dff1e2a6-0fee-4f01-b85e-1eb7a81be47b"
+                    },
+                    {
+                        name: "Corona Recovery",
+                        id: "41fceb36-31a2-4990-ab8d-96d91dcbe3c9"
                     }
                 ].filter(x => x.name.toLowerCase().includes(filter.toLowerCase())))
             ].filter(x => x.items.length > 0)

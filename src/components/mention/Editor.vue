@@ -94,53 +94,6 @@ export default class Editor extends Vue {
         event.preventDefault();
         break;
       }
-
-      // case "Backspace":
-      // case "Escape":
-      // case "ArrowLeft":
-      // case "ArrowRight": {
-      //   if (this.currentMention == null) break;
-      //   if (event.key == "Backspace" && this.currentMention.innerText.length >= 1) {
-      //     break;
-      //   }
-
-      //   break;
-      // }
-
-      // case "Enter": {
-      //   if (this.currentMention != null) {
-
-      //     console.log("Filter", this.currentMention.innerText);
-      //     const filter = this.currentMention.innerText.toLowerCase().replace("@", "");
-      //     // const results: any[] =
-      //     //   database.users.filter(x => this.currentMention != null && x.name.toLowerCase().includes(filter)).map(x => Object.assign(x, { type: "user" })).concat(
-      //     //     database.tasks.filter(x => this.currentMention != null && x.name.toLowerCase().includes(filter)).map(x => Object.assign(x, { type: "task" })));
-      //     // console.log("Results", results);
-      //     // this.currentMention.setAttribute("data-target-id", results[0].id);
-      //     // this.currentMention.setAttribute("data-target-type", results[0].type);
-      //     // this.currentMention.setAttribute("contenteditable", "false");
-      //     // this.currentMention.innerText = "@" + results[0].name;
-      //     // this.currentMention.classList.remove("active");
-
-      //     this.setFocusOnEnd(false);
-
-      //     this.currentMention = null;
-
-      //   }
-      //   console.log(this.$refs.editable.innerHTML);
-      //   event.preventDefault();
-      //   break;
-      // }
-
-      // default: {
-      //   if (event.keyCode < 48 || event.keyCode > 90) break; //we dont want to catch any special keys (like function, or control keys)
-      //   if (this.currentMention != null && event.keyCode) {
-      //     const mentionText = this.currentMention.innerText.replace("@", "") + event.key;
-      //     console.log(mentionText);
-      //     // console.log(database.users.filter(x => x.name.includes(mentionText)));
-      //     // console.log(database.tasks.filter(x => x.name.includes(mentionText)));
-      //   }
-      // }
     }
   }
 }
@@ -149,15 +102,17 @@ export default class Editor extends Vue {
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
 .editable:focus-within {
-  border: 1px solid grey;
+  outline: none;
+  border: 1px solid #cccccc;
 }
 .editable {
-  margin: 10px auto;
+  margin: 10px;
+  line-height: 25px;
   max-width: 800px;
   padding: 5px;
   min-height: 60px;
-  border: 1px solid grey;
+  border: 1px solid #eeeeee;
   border-radius: 3px;
-  background-color: #eeeeee;
+  background-color: #fafafa;
 }
 </style>

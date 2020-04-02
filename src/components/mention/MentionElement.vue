@@ -25,9 +25,13 @@ export default class MentionElement extends Vue {
   @Prop()
   resultProvider?: MentionResultProvider;
 
-  filteredResults?: MentionResults;
-  dropDownElement?: DropDown;
-  
+  private filteredResults?: MentionResults;
+  private dropDownElement?: DropDown;
+
+
+  /**
+   * Focus the end of the mention (so that typing does not happen before the @ carret)
+   */
   focusEnd() {
     const selection = window.getSelection(); // allows us to manage what / where the user has selected / is entering text
     if (selection != null) {
@@ -44,46 +48,46 @@ export default class MentionElement extends Vue {
     }
   }
 
-  onBlur() {
-    if (this.isActive && this.dropDownElement == undefined) {
-      this.$emit("destroy");
+  /**
+   * Dont allow an active mention to be unfocused / blurred
+   */
+
+  private onBlur(event: MouseEvent) {
+    if (this.isActive) {
+      event.stopImmediatePropagation();
+      this.$el.focus();
+      this.focusEnd();
+
     }
   }
 
-  async onKey(event: KeyboardEvent) {
+
+  private async onKey(event: KeyboardEvent) {
     switch (event.key) {
 
+      // Allows navigation of the dropdown using up and down arrows:
       case "ArrowUp":
       case "ArrowDown": {
-        event.preventDefault();
         if (this.dropDownElement == undefined) break;
-
-        if (event.key == "ArrowUp") {
+        const allItems = this.dropDownElement.getAllItems();
+        if (event.key == "ArrowUp" && this.dropDownElement.selectedIndex > 0) {
           this.dropDownElement.selectedIndex -= 1;
-        } else {
+        } else if (event.key == "ArrowDown" && this.dropDownElement.selectedIndex < allItems.length - 1) {
           this.dropDownElement.selectedIndex += 1;
         }
-
-        break;
-      }
-      case "ArrowLeft": {
         event.preventDefault();
         break;
       }
+      // Allows the posibility to exit the mention (to only place an @ symbol):
+      // Please note that this also includes
       case "ArrowRight":
       case "Backspace":
       case "Escape": {
         if (this.content == undefined) return;
 
-
         if (this.content.length > 1 && event.key == "Backspace") {
           this.content = this.content.substring(0, this.content.length - 1);
-          if (this.resultProvider != undefined && this.content != undefined) {
-            this.filteredResults = await this.resultProvider.fetchResults(this.content.substring(1, this.content.length));
-          }
-          if (this.dropDownElement != undefined && this.filteredResults != undefined && this.dropDownElement.elements != this.filteredResults.results) {
-            this.dropDownElement.elements = this.filteredResults.results;
-          }
+          await this.updateFilter();
         } else if (this.content.length <= 1 || event.key != "Backspace") {
           if (this.dropDownElement != undefined) {
             this.dropDownElement.$destroy();
@@ -93,9 +97,7 @@ export default class MentionElement extends Vue {
           this.isActive = false;
           this.$emit("destroy");
         }
-
         event.preventDefault();
-
         break;
       }
       case "Enter":
@@ -105,29 +107,35 @@ export default class MentionElement extends Vue {
         break;
       }
       default: {
-        if (event.key.length == 1) {
-          this.content += event.key;
-          if (this.resultProvider != undefined && this.content != undefined) {
-            this.filteredResults = await this.resultProvider.fetchResults(this.content.substring(1, this.content.length));
-          }
-          if (this.filteredResults != undefined && this.filteredResults.results.length > 0 && this.dropDownElement == undefined) {
-            this.spawnDropdown(this.filteredResults);
-          } else if (this.dropDownElement != undefined && this.filteredResults != undefined && this.dropDownElement.elements != this.filteredResults.results) {
-            this.dropDownElement.elements = this.filteredResults.results;
-          }
-          event.preventDefault();
+        if (event.key.length != 1 || event.ctrlKey) return; // the key press was some kind of modifier, so we can ignore it, but still let the event pass...
+        this.content += event.key;
+
+        await this.updateFilter();
+        if (this.filteredResults != undefined && this.filteredResults.results.length > 0 && this.dropDownElement == undefined) {
+          this.spawnDropdown(this.filteredResults);
         }
+        
+        event.preventDefault();
         break;
       }
     }
 
-
-
-
-
   }
 
-  submitMention() {
+  private async updateFilter() {
+    if (this.resultProvider != undefined && this.content != undefined) {
+      this.filteredResults = await this.resultProvider.fetchResults(this.content.substring(1, this.content.length));
+    }
+    if (this.dropDownElement != undefined && this.filteredResults != undefined && this.dropDownElement.elements != this.filteredResults.results) {
+      this.dropDownElement.selectedIndex = 0;
+      this.dropDownElement.elements = this.filteredResults.results;
+    }
+  }
+
+  /**
+   * Completes a mention asuming that there is a result
+   */
+  private submitMention() {
     if (this.dropDownElement != undefined && this.filteredResults != undefined) {
 
       this.isActive = false;
@@ -138,14 +146,11 @@ export default class MentionElement extends Vue {
       this.$el.setAttribute("data-mention-type", MentionType[this.filteredResults.results.find(x => x.items.includes(this.dropDownElement?.selectedItem))?.type ?? MentionType.User].toString());
       this.$emit("submit", this.dropDownElement.selectedItem);
       this.dropDownElement = undefined;
-
-
-
       return;
     }
   }
 
-  spawnDropdown(results: MentionResults) {
+  private spawnDropdown(results: MentionResults) {
     const dropDown = new DropDown();
     dropDown.node = this.$el as HTMLSpanElement;
     dropDown.elements = results.results;
@@ -164,14 +169,29 @@ export default class MentionElement extends Vue {
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
 .mention:focus-within {
-  border: solid 1px red;
   outline: 0px solid transparent;
-  padding: 5px;
 }
 .mention {
-  color: blue;
+  white-space: nowrap;
+  padding: 2px 5px;
+  background-color: white;
+  color: white;
+  border-radius: 15px;
+  border: none;
+}
+
+.mention[data-mention-type="Job"] {
+  background-color: #a31787;
+}
+.mention[data-mention-type="User"] {
+  background-color: #426aed;
+}
+
+.mention[data-mention-type="Task"] {
+  background-color: #e68927;
 }
 .mention.active {
-  color: red;
+  background-color: #d0d0d0;
+  color: black;
 }
 </style>
