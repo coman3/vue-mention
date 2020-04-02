@@ -29,12 +29,12 @@ export default class DropDown extends Vue {
   @Prop()
   selectedIndex = 0;
 
-  constructor() {
-    super();
+  mounted() {
     window.addEventListener("resize", this.onResize);
   }
+  
 
-  $destroy() {
+  beforeDestroy() {
     super.$destroy();
     window.removeEventListener("resize", this.onResize);
   }
@@ -98,7 +98,7 @@ export default class DropDown extends Vue {
   border-radius: 4px;
   border: grey solid 1px;
   background-color: #fafafa;
-  min-width: 200px;
+  max-width: 200px;
 }
 .dropdown .empty {
   padding: 10px;

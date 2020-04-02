@@ -1,6 +1,5 @@
 <template>
 <div>
-  <!--<br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br />-->
   <Editor :resultProvider="resultProvider"></Editor>
   </div>
 </template>
