@@ -9,7 +9,7 @@
 
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
-import MentionResultProvider, { MentionResults, MentionType } from '../MentionResultProvider';
+import MentionResultProvider, { MentionResults, MentionType } from '../../models/MentionResultProvider';
 import DropDown from './DropDown.vue';
 
 @Component
@@ -32,7 +32,7 @@ export default class MentionElement extends Vue {
   /**
    * Focus the end of the mention (so that typing does not happen before the @ carret)
    */
-  focusEnd() {
+  setFocusEnd() {
     const selection = window.getSelection(); // allows us to manage what / where the user has selected / is entering text
     if (selection != null) {
       selection.setPosition(this.$el, 1);
@@ -50,18 +50,20 @@ export default class MentionElement extends Vue {
 
   /**
    * Dont allow an active mention to be unfocused / blurred
+   * TODO: Only block the action if the dropdown was clicked, otherwize emit destroy
    */
-
   private onBlur(event: MouseEvent) {
     if (this.isActive) {
       event.stopImmediatePropagation();
       this.$el.focus();
-      this.focusEnd();
-
+      this.setFocusEnd();
     }
   }
 
 
+  /**
+   * When a key as been pressed on the current mention, proccess it
+   */
   private async onKey(event: KeyboardEvent) {
     switch (event.key) {
 
@@ -100,21 +102,24 @@ export default class MentionElement extends Vue {
         event.preventDefault();
         break;
       }
+      // Allows the mention to be completed with some data
       case "Enter":
       case "Tab": {
         this.submitMention();
         event.preventDefault();
         break;
       }
+
+      // Allows data to be entered into the mention
       default: {
         if (event.key.length != 1 || event.ctrlKey) return; // the key press was some kind of modifier, so we can ignore it, but still let the event pass...
-        this.content += event.key;
+        this.content = this.$el.innerText + event.key; // set its innerText to remove all formating that may have just been pasted in
 
         await this.updateFilter();
         if (this.filteredResults != undefined && this.filteredResults.results.length > 0 && this.dropDownElement == undefined) {
           this.spawnDropdown(this.filteredResults);
         }
-        
+
         event.preventDefault();
         break;
       }
@@ -143,7 +148,7 @@ export default class MentionElement extends Vue {
       this.dropDownElement.$destroy();
       this.content = "@" + this.dropDownElement.selectedItem.name;
       this.$el.setAttribute("data-mention-id", this.dropDownElement.selectedItem.id);
-      this.$el.setAttribute("data-mention-type", MentionType[this.filteredResults.results.find(x => x.items.includes(this.dropDownElement?.selectedItem))?.type ?? MentionType.User].toString());
+      this.$el.setAttribute("data-mention-type", MentionType[this.filteredResults.results.find(x => x.items.includes(this.dropDownElement!.selectedItem))?.type ?? MentionType.User].toString());
       this.$emit("submit", this.dropDownElement.selectedItem);
       this.dropDownElement = undefined;
       return;

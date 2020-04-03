@@ -6,7 +6,7 @@
 
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
-import MentionResultProvider from "../MentionResultProvider";
+import MentionResultProvider from "../../models/MentionResultProvider";
 import DropDown from "./DropDown.vue";
 import MentionElement from './MentionElement.vue';
 @Component({
@@ -15,47 +15,72 @@ import MentionElement from './MentionElement.vue';
   }
 })
 export default class Editor extends Vue {
-
-  @Prop()
-  resultProvider?: MentionResultProvider;
-
-  isEditingMention = false;
+  /** Allows ys to keep track of if we are editing a mention or not */
+  private get isEditingMention() { return this.currentMention != null; }
+  /** Store the current mention we are editing */
+  private currentMention: MentionElement | null = null;
 
   $refs!: {
     editable: HTMLParagraphElement;
   }
 
-  private currentMention: MentionElement | null = null;
+  /**
+   * The provider for what data should be shown on the mention dropdowns
+   */
+  @Prop()
+  resultProvider?: MentionResultProvider;
+
+
+  /** 
+   * Call when a mention has been completed with some data 
+   * 
+   */
+  private onMentionSubmit(mentionElement: MentionElement, mentionData: any) {
+    this.setFocusOnEnd();
+    this.currentMention = null;
+  }
+
+  /** 
+   * Call when a mention has been destroyed
+   */
+  private onMentionDestroy(mentionElement: MentionElement) {
+    if (mentionElement == null) return;
+
+    const text = mentionElement.content;
+    this.$refs.editable.removeChild(mentionElement.$el);
+    mentionElement.$destroy();
+    if (this.currentMention == mentionElement) {
+      this.currentMention = null;
+    }
+    this.setFocusOnEnd(true, text);
+  }
+
+
 
   private spawnMention(): MentionElement {
     const span = new MentionElement();
     span.isActive = true;
     span.content = "@";
     span.resultProvider = this.resultProvider;
-    span.$on("submit", (element: any) => {
-      console.log("Mention Submitted", element);
-      this.isEditingMention = false;
-      this.setFocusOnEnd();
-      this.currentMention = null;
-    });
-    span.$on("destroy", () => {
-      console.log("Mention Destroyed");
-      this.isEditingMention = false;
-      this.destroyMention(this.currentMention);
-    })
+    span.$on("submit", (data: any) => this.onMentionSubmit(span, data));
+    span.$on("destroy", () => this.onMentionDestroy(span));
     span.$mount(); // We need to allow vue to create the element from the template
-    const element = this.$refs.editable.appendChild(span.$el) as HTMLSpanElement; // Add the element exactly where we want it.
+    this.$refs.editable.appendChild(span.$el) as HTMLSpanElement; // Add the element exactly where we want it - the end
 
-    span.focusEnd();
+    span.setFocusEnd();
     return span;
   }
 
-  private setFocusOnEnd(createNodeIfNotThere = true) {
+  private setFocusOnEnd(createNodeIfNotThere = true, contentToAdd = "\u00A0 ") {
 
-    console.log(this.$refs.editable.childNodes[this.$refs.editable.childNodes.length - 1]);
-    if (createNodeIfNotThere && this.$refs.editable.childNodes[this.$refs.editable.childNodes.length - 1].nodeType != 3) {
-      this.$refs.editable.appendChild(document.createTextNode('\u00A0'));
+    const lastNode = this.$refs.editable.childNodes[this.$refs.editable.childNodes.length - 1];
+    if (createNodeIfNotThere && lastNode.nodeType != 3) {
+      this.$refs.editable.appendChild(document.createTextNode(contentToAdd));
+    } else if (lastNode.nodeType == 3) {
+      const text = lastNode as Text;
+      text.nodeValue = text.nodeValue + contentToAdd;
     }
+
     const newPosition = document.createRange();
     newPosition.setStart(this.$refs.editable, this.$refs.editable.childNodes.length);
 
@@ -69,28 +94,11 @@ export default class Editor extends Vue {
     }
   }
 
-  private destroyMention(mention: MentionElement | null) {
-    if (mention == null) return;
-
-    const text = mention.content;
-    this.$refs.editable.appendChild(document.createTextNode(text ?? ""));
-
-    this.$refs.editable.removeChild(mention.$el);
-    mention.$destroy();
-    this.currentMention = null;
-
-    this.setFocusOnEnd(false);
-  }
-
   onKey(event: KeyboardEvent) {
     if (this.currentMention != null) return;
     switch (event.key) {
       case "@": {
-        // if (this.currentMention != null) {
-        //   this.destroyMention(this.currentMention);
-        // }
         this.currentMention = this.spawnMention();
-        this.isEditingMention = true;
         event.preventDefault();
         break;
       }

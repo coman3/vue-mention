@@ -1,17 +1,30 @@
 import User from './User';
 import Task from './Task';
+import Job from './Job';
 
 export type MentionResultFetcher = (filter: string) => Promise<MentionResults>;
 
+/**
+ * What a mention item must have to be implemented
+ */
+export interface Mention {
+    name: string;
+    id: string;
+}
 
-
+/**
+ * Type of the mention
+ */
 export enum MentionType {
     Task,
     User,
     Job,
 }
 
-export class MentionResult<TType> {
+/**
+ * A model that groups items by type with a title
+ */
+export class MentionResult<TType extends Mention> {
     title: string;
     type: MentionType;
     items: TType[];
@@ -24,19 +37,23 @@ export class MentionResult<TType> {
 
 }
 
+/**
+ * All results from a filter response
+ */
 export class MentionResults {
-    results: MentionResult<any>[];
-    constructor(results: MentionResult<any>[]) {
+    results: MentionResult<Mention>[];
+    constructor(results: MentionResult<Mention>[]) {
         this.results = results;
     }
 }
 
-
-
-
+/**
+ * A provider for results from a filter search
+ * It is recommended that you debounce your network requests
+ */
 export default class MentionResultProvider {
 
-    fetchResults: MentionResultFetcher = this.fetch;
+    fetchResults: MentionResultFetcher = this.fetchAsync;
 
     constructor(fetcher?: MentionResultFetcher) {
         if (fetcher != undefined) {
@@ -54,7 +71,7 @@ export default class MentionResultProvider {
         ]);
     }
 
-    protected fetch(filter: string): Promise<MentionResults> {
+    protected async fetchAsync(filter: string): Promise<MentionResults> {
         return new Promise<MentionResults>((res) => res(new MentionResults(
             [
                 new MentionResult<User>("Users", MentionType.User, [
@@ -85,7 +102,7 @@ export default class MentionResultProvider {
                         id: "d1dd6aa3-d306-498a-882c-caf12ee27280"
                     }
                 ].filter(x => x.name.toLowerCase().includes(filter.toLowerCase()))),
-                new MentionResult<Task>("Jobs", MentionType.Job, [
+                new MentionResult<Job>("Jobs", MentionType.Job, [
                     {
                         name: "Bank Security Checkup",
                         id: "dff1e2a6-0fee-4f01-b85e-1eb7a81be47b"

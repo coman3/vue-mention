@@ -17,14 +17,16 @@
 
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
-import { MentionResult } from '../MentionResultProvider';
+import { MentionResult } from '../../models/MentionResultProvider';
+import { Mention } from '../../models/MentionResultProvider';
+import * as CSS from "csstype";
 
 @Component
 export default class DropDown extends Vue {
   @Prop()
   node?: HTMLSpanElement;
   @Prop()
-  elements: MentionResult<any>[] = [];
+  elements: MentionResult<Mention>[] = [];
 
   @Prop()
   selectedIndex = 0;
@@ -32,28 +34,27 @@ export default class DropDown extends Vue {
   mounted() {
     window.addEventListener("resize", this.onResize);
   }
-  
+
 
   beforeDestroy() {
-    super.$destroy();
     window.removeEventListener("resize", this.onResize);
   }
 
   private onResize() {
     this.$forceUpdate();
   }
-  get selectedItem(): any {
+  get selectedItem(): Mention {
     const allItems = this.getAllItems();
     return allItems[this.selectedIndex];
   }
 
 
-  onClick(item: any) {
+  onClick(item: Mention) {
     this.selectedIndex = this.getAllItems().indexOf(item);
     this.$emit("selected", this.selectedItem, this.selectedIndex);
   }
 
-  getStyle() {
+  getStyle(): CSS.Properties {
     if (this.node == undefined) return {};
     const rect = this.node.getBoundingClientRect();
     const styles = {
@@ -62,20 +63,20 @@ export default class DropDown extends Vue {
     } as any;
 
     if (styles.left > window.innerWidth - 200) {
-      styles.left = null;
+      styles.left = undefined;
       styles.right = 5;
     }
     if (styles.top > window.innerHeight - 200) {
-      styles.top = null;
+      styles.top = undefined;
       styles.bottom = window.innerHeight - rect.y + 5;
     }
 
     for (const key in styles) {
-      if (styles[key] == null) continue;
+      if (styles[key] == undefined) continue; // I have trust issues okay....
       styles[key] = styles[key] + "px";
     }
 
-    return styles;
+    return styles as CSS.Properties;
   }
 
   getAllItems(): any[] {

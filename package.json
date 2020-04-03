@@ -16,6 +16,7 @@
     "vuetify": "^2.2.11"
   },
   "devDependencies": {
+    "csstype": "^2.6.10",
     "@typescript-eslint/eslint-plugin": "^2.18.0",
     "@typescript-eslint/parser": "^2.18.0",
     "@vue/cli-plugin-babel": "~4.2.0",
