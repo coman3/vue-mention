@@ -1,18 +1,27 @@
 <template>
-  <div class="dropdown" :style="getStyle()">
-    <div class="empty" v-if="elements.length <= 0">No Results...</div>
-    <div v-for="type in elements" :key="type.type">
-      <div class="title">{{type.title}}</div>
-      <ul>
-        <li
-          v-for="item in type.items"
-          :key="item.id"
-          :class="{active: selectedItem == item }"
-          @click="onClick(item)"
-        >{{item.name}}</li>
-      </ul>
-    </div>
-  </div>
+  <v-menu transition="slide-y-transition" :attach="node.parentNode" :value="true" fixed :activator="node" bottom nudge-bottom="24px" nudge-left="-5px">
+    <v-list dense v-model="selectedIndex" >
+      <template v-for="type in elements">
+        <v-subheader :key="type.type + 'header'">{{type.title}}</v-subheader>
+        <v-list-item-group :key="type.type  + 'group'" color="primary">
+          <v-list-item
+            dense
+            v-for="item in type.items"
+            :key="item.id"
+            @click="onClick(item)"
+            :value="getGlobalIndexOf(item)"
+          >
+            <v-list-item-icon v-if="type.type == 1">
+              <v-icon v-text="'mdi-flag'"></v-icon>
+            </v-list-item-icon>
+            <v-list-item-content>
+              <v-list-item-title v-html="item.name"></v-list-item-title>
+            </v-list-item-content>
+          </v-list-item>
+        </v-list-item-group>
+      </template>
+    </v-list>
+  </v-menu>
 </template>
 
 <script lang="ts">
@@ -20,8 +29,11 @@ import { Component, Prop, Vue } from 'vue-property-decorator';
 import { MentionResult } from '../../models/MentionResultProvider';
 import { Mention } from '../../models/MentionResultProvider';
 import * as CSS from "csstype";
+import vuetify from "../../plugins/vuetify";
 
-@Component
+@Component({
+  vuetify
+})
 export default class DropDown extends Vue {
   @Prop()
   node?: HTMLSpanElement;
@@ -43,6 +55,11 @@ export default class DropDown extends Vue {
   private onResize() {
     this.$forceUpdate();
   }
+  getGlobalIndexOf(element: Mention){
+    const allItems = this.getAllItems();
+    return allItems.indexOf(element);
+  }
+
   get selectedItem(): Mention {
     const allItems = this.getAllItems();
     return allItems[this.selectedIndex];
@@ -116,8 +133,5 @@ ul li {
   cursor: pointer;
   padding: 5px;
   background-color: #ffffff;
-}
-li.active {
-  background-color: #cfcfcf;
 }
 </style>

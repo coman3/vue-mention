@@ -14,6 +14,8 @@ import DropDown from './DropDown.vue';
 
 @Component
 export default class MentionElement extends Vue {
+  private filteredResults?: MentionResults;
+  private dropDownElement?: DropDown;
 
   $el!: HTMLSpanElement;
 
@@ -21,12 +23,10 @@ export default class MentionElement extends Vue {
   isActive = false;
   @Prop()
   content?: string;
-
   @Prop()
   resultProvider?: MentionResultProvider;
 
-  private filteredResults?: MentionResults;
-  private dropDownElement?: DropDown;
+
 
 
   /**
