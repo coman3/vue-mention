@@ -159,6 +159,7 @@ export default class MentionElement extends Vue {
     const dropDown = new DropDown();
     dropDown.node = this.$el as HTMLSpanElement;
     dropDown.elements = results.results;
+    dropDown.selectedIndex = 0;
     dropDown.$mount();
     document.body.appendChild(dropDown.$el);
     console.log(dropDown.$el);
@@ -177,26 +178,25 @@ export default class MentionElement extends Vue {
   outline: 0px solid transparent;
 }
 .mention {
-  white-space: nowrap;
-  padding: 2px 5px;
-  background-color: white;
-  color: white;
-  border-radius: 15px;
+  color: black;
   border: none;
 }
 
 .mention[data-mention-type="Job"] {
-  background-color: #a31787;
+  color: #a31787;
 }
 .mention[data-mention-type="User"] {
-  background-color: #426aed;
+  color: #426aed;
 }
 
 .mention[data-mention-type="Task"] {
-  background-color: #e68927;
+  color: #e68927;
 }
 .mention.active {
   background-color: #d0d0d0;
   color: black;
+  white-space: nowrap;
+  padding: 2px 5px;  
+  border-radius: 15px;
 }
 </style>

@@ -1,15 +1,25 @@
 <template>
-  <v-menu transition="slide-y-transition" :attach="node.parentNode" :value="true" fixed :activator="node" bottom nudge-bottom="24px" nudge-left="-5px">
-    <v-list dense v-model="selectedIndex" >
+  <v-menu
+    transition="slide-y-transition"
+    :attach="node.parentNode"
+    :value="true"
+    fixed
+    :activator="node"
+    bottom
+    nudge-bottom="24px"
+    nudge-left="-5px"
+  >
+    <v-list dense>
       <template v-for="type in elements">
         <v-subheader :key="type.type + 'header'">{{type.title}}</v-subheader>
-        <v-list-item-group :key="type.type  + 'group'" color="primary">
+        <v-list-item-group :key="type.type + 'group'" color="primary">
           <v-list-item
+            :activator="selectedItem"
             dense
             v-for="item in type.items"
             :key="item.id"
             @click="onClick(item)"
-            :value="getGlobalIndexOf(item)"
+            :value="item"
           >
             <v-list-item-icon v-if="type.type == 1">
               <v-icon v-text="'mdi-flag'"></v-icon>
@@ -25,7 +35,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
 import { MentionResult } from '../../models/MentionResultProvider';
 import { Mention } from '../../models/MentionResultProvider';
 import * as CSS from "csstype";
@@ -43,23 +53,6 @@ export default class DropDown extends Vue {
   @Prop()
   selectedIndex = 0;
 
-  mounted() {
-    window.addEventListener("resize", this.onResize);
-  }
-
-
-  beforeDestroy() {
-    window.removeEventListener("resize", this.onResize);
-  }
-
-  private onResize() {
-    this.$forceUpdate();
-  }
-  getGlobalIndexOf(element: Mention){
-    const allItems = this.getAllItems();
-    return allItems.indexOf(element);
-  }
-
   get selectedItem(): Mention {
     const allItems = this.getAllItems();
     return allItems[this.selectedIndex];
@@ -69,31 +62,6 @@ export default class DropDown extends Vue {
   onClick(item: Mention) {
     this.selectedIndex = this.getAllItems().indexOf(item);
     this.$emit("selected", this.selectedItem, this.selectedIndex);
-  }
-
-  getStyle(): CSS.Properties {
-    if (this.node == undefined) return {};
-    const rect = this.node.getBoundingClientRect();
-    const styles = {
-      top: (rect.y + rect.height),
-      left: (rect.x),
-    } as any;
-
-    if (styles.left > window.innerWidth - 200) {
-      styles.left = undefined;
-      styles.right = 5;
-    }
-    if (styles.top > window.innerHeight - 200) {
-      styles.top = undefined;
-      styles.bottom = window.innerHeight - rect.y + 5;
-    }
-
-    for (const key in styles) {
-      if (styles[key] == undefined) continue; // I have trust issues okay....
-      styles[key] = styles[key] + "px";
-    }
-
-    return styles as CSS.Properties;
   }
 
   getAllItems(): any[] {
