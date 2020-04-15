@@ -8,9 +8,12 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
-import MentionResultProvider, { MentionResults, MentionType } from '../../models/MentionResultProvider';
-import DropDown from './DropDown.vue';
+import { Component, Prop, Vue } from "vue-property-decorator";
+import MentionResultProvider, {
+  MentionResults,
+  MentionType
+} from "../../models/MentionResultProvider";
+import DropDown from "./DropDown.vue";
 
 @Component
 export default class MentionElement extends Vue {
@@ -26,9 +29,6 @@ export default class MentionElement extends Vue {
   @Prop()
   resultProvider?: MentionResultProvider;
 
-
-
-
   /**
    * Focus the end of the mention (so that typing does not happen before the @ carret)
    */
@@ -37,20 +37,23 @@ export default class MentionElement extends Vue {
     if (selection != null) {
       selection.setPosition(this.$el, 1);
       const element = this.$el as HTMLSpanElement;
-      setTimeout(() => { // This is required to allow the element to be displayed first.... #Wtaf Javascript
+      setTimeout(() => {
+        // This is required to allow the element to be displayed first.... #Wtaf Javascript
         element.focus();
       }, 0);
     } else {
       // Fuck, their browser dosnt support this api... This will be a fun time.... #completelybreakseverythingbecausejavascriptsucks
       // Do something about this other than a shitty alert...
-      // See: https://developer.mozilla.org/en-US/docs/Web/API/Selection#Browser_compatibility for what supports this api.
-      alert("Your browser dosnt do what we dang need it to do to make mentions work.... Please use something modern, thanks.");
+      // See: https://developer.mozilla.org/en-US/docs/Web/API/Selection#Browser_compatibility for what supports this api (its anything modern).
+      alert(
+        "Your browser dosnt do what we dang need it to do to make mentions work.... Please use something modern, thanks."
+      );
     }
   }
 
   /**
    * Dont allow an active mention to be unfocused / blurred
-   * TODO: Only block the action if the dropdown was clicked, otherwize emit destroy
+   * TODO (Optional): Only block the action if the dropdown was clicked, otherwize emit destroy
    */
   private onBlur(event: MouseEvent) {
     if (this.isActive) {
@@ -60,22 +63,28 @@ export default class MentionElement extends Vue {
     }
   }
 
-
   /**
    * When a key as been pressed on the current mention, proccess it
    */
   private async onKey(event: KeyboardEvent) {
     switch (event.key) {
-
       // Allows navigation of the dropdown using up and down arrows:
       case "ArrowUp":
       case "ArrowDown": {
         if (this.dropDownElement == undefined) break;
         const allItems = this.dropDownElement.getAllItems();
-        if (event.key == "ArrowUp" && this.dropDownElement.selectedIndex > 0) {
-          this.dropDownElement.selectedIndex -= 1;
-        } else if (event.key == "ArrowDown" && this.dropDownElement.selectedIndex < allItems.length - 1) {
-          this.dropDownElement.selectedIndex += 1;
+        if (event.key == "ArrowUp") {
+          if (this.dropDownElement.selectedIndex > 0) {
+            this.dropDownElement.selectedIndex -= 1;
+          } else {
+            this.dropDownElement.selectedIndex = allItems.length - 1;
+          }
+        } else if (event.key == "ArrowDown") {
+          if (this.dropDownElement.selectedIndex < allItems.length - 1) {
+            this.dropDownElement.selectedIndex += 1;
+          } else {
+            this.dropDownElement.selectedIndex = 0;
+          }
         }
         event.preventDefault();
         break;
@@ -116,7 +125,11 @@ export default class MentionElement extends Vue {
         this.content = this.$el.innerText + event.key; // set its innerText to remove all formating that may have just been pasted in
 
         await this.updateFilter();
-        if (this.filteredResults != undefined && this.filteredResults.results.length > 0 && this.dropDownElement == undefined) {
+        if (
+          this.filteredResults != undefined &&
+          this.filteredResults.results.length > 0 &&
+          this.dropDownElement == undefined
+        ) {
           this.spawnDropdown(this.filteredResults);
         }
 
@@ -124,14 +137,19 @@ export default class MentionElement extends Vue {
         break;
       }
     }
-
   }
 
   private async updateFilter() {
     if (this.resultProvider != undefined && this.content != undefined) {
-      this.filteredResults = await this.resultProvider.fetchResults(this.content.substring(1, this.content.length));
+      this.filteredResults = await this.resultProvider.fetchResults(
+        this.content.substring(1, this.content.length)
+      );
     }
-    if (this.dropDownElement != undefined && this.filteredResults != undefined && this.dropDownElement.elements != this.filteredResults.results) {
+    if (
+      this.dropDownElement != undefined &&
+      this.filteredResults != undefined &&
+      this.dropDownElement.elements != this.filteredResults.results
+    ) {
       this.dropDownElement.selectedIndex = 0;
       this.dropDownElement.elements = this.filteredResults.results;
     }
@@ -141,15 +159,24 @@ export default class MentionElement extends Vue {
    * Completes a mention asuming that there is a result
    */
   private submitMention() {
-    if (this.dropDownElement != undefined && this.filteredResults != undefined) {
-
+    if (
+      this.dropDownElement != undefined &&
+      this.filteredResults != undefined
+    ) {
       this.isActive = false;
       document.body.removeChild(this.dropDownElement.$el);
       this.dropDownElement.$destroy();
-      this.content = "@" + this.dropDownElement.selectedItem.name;
-      this.$el.setAttribute("data-mention-id", this.dropDownElement.selectedItem.id);
-      this.$el.setAttribute("data-mention-type", MentionType[this.filteredResults.results.find(x => x.items.includes(this.dropDownElement!.selectedItem))?.type ?? MentionType.User].toString());
-      this.$emit("submit", this.dropDownElement.selectedItem);
+      const selectedItem = this.dropDownElement.selectedItem;
+      this.content = "@" + selectedItem.name;
+      this.$el.setAttribute("data-mention-id", selectedItem.id);
+      this.$el.setAttribute(
+        "data-mention-type",
+        MentionType[
+          this.filteredResults.results.find(x => x.items.includes(selectedItem))
+            ?.type ?? MentionType.User
+        ].toString()
+      );
+      this.$emit("submit", selectedItem);
       this.dropDownElement = undefined;
       return;
     }
@@ -162,7 +189,6 @@ export default class MentionElement extends Vue {
     dropDown.selectedIndex = 0;
     dropDown.$mount();
     document.body.appendChild(dropDown.$el);
-    console.log(dropDown.$el);
 
     dropDown.$on("selected", (element: any) => {
       this.submitMention();
@@ -196,7 +222,7 @@ export default class MentionElement extends Vue {
   background-color: #d0d0d0;
   color: black;
   white-space: nowrap;
-  padding: 2px 5px;  
+  padding: 2px 5px;
   border-radius: 15px;
 }
 </style>

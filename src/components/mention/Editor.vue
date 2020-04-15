@@ -74,9 +74,9 @@ export default class Editor extends Vue {
   private setFocusOnEnd(createNodeIfNotThere = true, contentToAdd = "\u00A0 ") {
 
     const lastNode = this.$refs.editable.childNodes[this.$refs.editable.childNodes.length - 1];
-    if (createNodeIfNotThere && lastNode.nodeType != 3) {
+    if (createNodeIfNotThere && lastNode != undefined && lastNode.nodeType != 3) {
       this.$refs.editable.appendChild(document.createTextNode(contentToAdd));
-    } else if (lastNode.nodeType == 3) {
+    } else if (lastNode != undefined && lastNode.nodeType == 3) {
       const text = lastNode as Text;
       text.nodeValue = text.nodeValue + contentToAdd;
     }

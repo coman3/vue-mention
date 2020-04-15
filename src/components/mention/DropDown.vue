@@ -3,29 +3,27 @@
     transition="slide-y-transition"
     :attach="node.parentNode"
     :value="true"
-    fixed
+    :disable-keys="true"
     :activator="node"
     bottom
     nudge-bottom="24px"
     nudge-left="-5px"
   >
-    <v-list dense>
+    <v-list dense disabled>
       <template v-for="type in elements">
-        <v-subheader :key="type.type + 'header'">{{type.title}}</v-subheader>
-        <v-list-item-group :key="type.type + 'group'" color="primary">
+        <v-list-item-group v-model="selectedItem" :key="type.type + 'group'" color="primary">
+          <v-subheader :key="type.type + 'header'">{{type.title}}</v-subheader>
           <v-list-item
-            :activator="selectedItem"
             dense
             v-for="item in type.items"
             :key="item.id"
-            @click="onClick(item)"
             :value="item"
-          >
+            @click="onClick(item)">
             <v-list-item-icon v-if="type.type == 1">
               <v-icon v-text="'mdi-flag'"></v-icon>
             </v-list-item-icon>
             <v-list-item-content>
-              <v-list-item-title v-html="item.name"></v-list-item-title>
+              <v-list-item-title>{{item.name}}</v-list-item-title>
             </v-list-item-content>
           </v-list-item>
         </v-list-item-group>
