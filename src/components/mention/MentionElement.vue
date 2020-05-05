@@ -116,6 +116,7 @@ export default class MentionElement extends Vue {
       case "Tab": {
         this.submitMention();
         event.preventDefault();
+        event.stopPropagation();
         break;
       }
 

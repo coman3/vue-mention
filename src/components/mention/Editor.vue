@@ -56,7 +56,28 @@ export default class Editor extends Vue {
 
   }
 
+  private spawnElementAtSelection(newElement: HTMLElement, focusStartOfNextChild = false) {
+    const documentSelection = window.getSelection();
+    const element = documentSelection?.focusNode as Text;
+    if (documentSelection != null && element != null && element.nodeValue != null) {
+      const node1 = document.createTextNode(element.nodeValue.substring(0, documentSelection.focusOffset).trimEnd() + "\u00A0");
+      const node2 = document.createTextNode("\u00A0" + element.nodeValue.substring(documentSelection.focusOffset, element.nodeValue.length).trimStart());
+      this.$refs.editable.insertBefore(node1, element);
+      this.$refs.editable.insertBefore(newElement, element);
+      this.$refs.editable.insertBefore(node2, element);
+      this.$refs.editable.removeChild(element);
+      if (focusStartOfNextChild) {
+        documentSelection.removeAllRanges();
 
+        const newPosition = document.createRange();
+        newPosition.setStart(node2, 0);
+        documentSelection.addRange(newPosition);
+
+      }
+      return true;
+    }
+    return false;
+  }
 
   private spawnMention(): MentionElement {
     const span = new MentionElement();
@@ -68,14 +89,7 @@ export default class Editor extends Vue {
     span.$mount(); // We need to allow vue to create the element from the template
     const documentSelection = window.getSelection();
     const element = documentSelection?.focusNode as Text;
-    if (documentSelection != null && element != null && element.nodeValue != null) {
-      const node1 = document.createTextNode(element.nodeValue.substring(0, documentSelection.focusOffset).trimEnd() + "\u00A0");
-      const node2 = document.createTextNode("\u00A0" + element.nodeValue.substring(documentSelection.focusOffset, element.nodeValue.length).trimStart());
-      this.$refs.editable.insertBefore(node1, element);
-      this.$refs.editable.insertBefore(span.$el, element);
-      this.$refs.editable.insertBefore(node2, element);
-      this.$refs.editable.removeChild(element);
-    } else {
+    if (!this.spawnElementAtSelection(span.$el)) {
       this.$refs.editable.appendChild(span.$el) as HTMLSpanElement; // Add the element exactly where they would normaly want it 
     }
 
@@ -87,7 +101,6 @@ export default class Editor extends Vue {
 
   private setFocusOnNextChildStart(createNodeIfNotThere = true, contentToAdd = "\u00A0") {
     const documentSelection = window.getSelection();
-    console.log("focusEnd", documentSelection);
     const newPosition = document.createRange();
     let positionSet = false;
     if (documentSelection != null) {
@@ -111,7 +124,6 @@ export default class Editor extends Vue {
           this.$refs.editable.appendChild(lastElement);
         }
         if (lastElement != null && lastElement.nodeValue != null) {
-          console.log("seting to last node")
           newPosition.setStart(lastElement, lastElement.nodeValue.length);
         }
       }
@@ -132,8 +144,14 @@ export default class Editor extends Vue {
         event.preventDefault();
         break;
       }
-      case "Enter":
+      case "Enter": {
         event.preventDefault();
+        if (!this.isEditingMention) {
+          
+          this.spawnElementAtSelection(document.createElement("br"), true)
+        }
+        break;
+      }
     }
   }
 }
