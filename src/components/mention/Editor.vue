@@ -36,7 +36,7 @@ export default class Editor extends Vue {
    * 
    */
   private onMentionSubmit(mentionElement: MentionElement, mentionData: any) {
-    this.setFocusOnEnd();
+    this.setFocusOnNextChildStart();
     this.currentMention = null;
   }
 
@@ -47,12 +47,13 @@ export default class Editor extends Vue {
     if (mentionElement == null) return;
 
     const text = mentionElement.content;
+    this.setFocusOnNextChildStart(true, text);
     this.$refs.editable.removeChild(mentionElement.$el);
     mentionElement.$destroy();
     if (this.currentMention == mentionElement) {
       this.currentMention = null;
     }
-    this.setFocusOnEnd(true, text);
+
   }
 
 
@@ -75,7 +76,7 @@ export default class Editor extends Vue {
       this.$refs.editable.insertBefore(node2, element);
       this.$refs.editable.removeChild(element);
     } else {
-      this.$refs.editable.appendChild(span.$el) as HTMLSpanElement; // Add the element exactly where we want it - the end
+      this.$refs.editable.appendChild(span.$el) as HTMLSpanElement; // Add the element exactly where they would normaly want it 
     }
 
 
@@ -84,23 +85,39 @@ export default class Editor extends Vue {
     return span;
   }
 
-  private setFocusOnEnd(createNodeIfNotThere = true, contentToAdd = "\u00A0 ") {
-
-    const lastNode = this.$refs.editable.childNodes[this.$refs.editable.childNodes.length - 1];
-    if (createNodeIfNotThere && lastNode != undefined && lastNode.nodeType != 3) {
-      this.$refs.editable.appendChild(document.createTextNode(contentToAdd));
-    } else if (lastNode != undefined && lastNode.nodeType == 3) {
-      const text = lastNode as Text;
-      text.nodeValue = text.nodeValue + contentToAdd;
-    }
-
-    const newPosition = document.createRange();
-    newPosition.setStart(this.$refs.editable, this.$refs.editable.childNodes.length);
-
+  private setFocusOnNextChildStart(createNodeIfNotThere = true, contentToAdd = "\u00A0") {
     const documentSelection = window.getSelection();
+    console.log("focusEnd", documentSelection);
+    const newPosition = document.createRange();
+    let positionSet = false;
     if (documentSelection != null) {
+      for (let index = 0; index < this.$refs.editable.childNodes.length; index++) {
+        const element = this.$refs.editable.childNodes[index];
+        if (element == documentSelection.focusNode) {
+          if (index + 1 < this.$refs.editable.childNodes.length) { // is textNode
+            const nextNode = this.$refs.editable.childNodes[index + 1];
+            nextNode.nodeValue = contentToAdd + nextNode.nodeValue?.trimStart()
+            newPosition.setStart(nextNode, contentToAdd.length);
+            positionSet = true;
+          }
+          break;
+        }
+      }
+
+      if (!positionSet) {
+        let lastElement = this.$refs.editable.childNodes[this.$refs.editable.childNodes.length - 1];
+        if (lastElement.nodeType != 3) { // is last element not a textNode (3)?
+          lastElement = document.createTextNode(contentToAdd);
+          this.$refs.editable.appendChild(lastElement);
+        }
+        if (lastElement != null && lastElement.nodeValue != null) {
+          console.log("seting to last node")
+          newPosition.setStart(lastElement, lastElement.nodeValue.length);
+        }
+      }
       documentSelection.removeAllRanges();
       documentSelection.addRange(newPosition);
+      // Do i even need to explain why this is here... Javascript is the reason...
       setTimeout(() => {
         this.$refs.editable.focus();
       }, 0);
@@ -115,6 +132,8 @@ export default class Editor extends Vue {
         event.preventDefault();
         break;
       }
+      case "Enter":
+        event.preventDefault();
     }
   }
 }
