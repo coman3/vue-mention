@@ -65,7 +65,20 @@ export default class Editor extends Vue {
     span.$on("submit", (data: any) => this.onMentionSubmit(span, data));
     span.$on("destroy", () => this.onMentionDestroy(span));
     span.$mount(); // We need to allow vue to create the element from the template
-    this.$refs.editable.appendChild(span.$el) as HTMLSpanElement; // Add the element exactly where we want it - the end
+    const documentSelection = window.getSelection();
+    const element = documentSelection?.focusNode as Text;
+    if (documentSelection != null && element != null && element.nodeValue != null) {
+      const node1 = document.createTextNode(element.nodeValue.substring(0, documentSelection.focusOffset).trimEnd() + "\u00A0");
+      const node2 = document.createTextNode("\u00A0" + element.nodeValue.substring(documentSelection.focusOffset, element.nodeValue.length).trimStart());
+      this.$refs.editable.insertBefore(node1, element);
+      this.$refs.editable.insertBefore(span.$el, element);
+      this.$refs.editable.insertBefore(node2, element);
+      this.$refs.editable.removeChild(element);
+    } else {
+      this.$refs.editable.appendChild(span.$el) as HTMLSpanElement; // Add the element exactly where we want it - the end
+    }
+
+
 
     span.setFocusEnd();
     return span;
